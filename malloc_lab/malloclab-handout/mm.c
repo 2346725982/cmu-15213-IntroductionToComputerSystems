@@ -45,8 +45,8 @@
 #define WSIZE       4       /* Word and header/footer size (bytes) */
 #define DSIZE       8       /* Double word size (bytes) */
 #define MIN_BLK     24      /* Header, footer, prev ptr, next ptr */
-#define CHUNKSIZE  ((1<<12)-DSIZE) /* Extend heap by this amount (bytes) */
-//#define CHUNKSIZE   16
+//#define CHUNKSIZE  ((1<<12)-DSIZE) /* Extend heap by this amount (bytes) */
+#define CHUNKSIZE   308
 
 #define OVERHEAD    8
 
@@ -377,16 +377,46 @@ static void place(void* bp, size_t size) {
  * 3. First fit in sorted address.
  */
 static void *find_fit(size_t size) {
+  /* First fit */
 	void *bp;
 
-//	printf("In find fit, before iteration of finding block.\n");
 	for (bp = free_listp; GET_ALLOC(HDRP(bp)) == 0; bp = GET_NEXT(bp)) {
-//		printf("In find fit iteration: \n");
-//		printf("    bp = %d\n", GET_SIZE(HDRP(bp)));
 		if (GET_SIZE(HDRP(bp)) >= size)
 			return bp;
 	}
 	return NULL;
+
+//	/* Next fit. */
+//	void *first;
+//	void *second;
+//
+//	for (first = free_listp; GET_ALLOC(HDRP(first)) == 0; first = GET_NEXT(first)) {
+//		if (GET_SIZE(HDRP(first)) >= size)
+//			break;
+//	}
+//
+//	for (second = first; GET_ALLOC(HDRP(second)) == 0; second = GET_NEXT(second)) {
+//			if (GET_SIZE(HDRP(second)) >= size)
+//				return second;
+//		}
+//
+//	if (GET_ALLOC(HDRP(first)) == 0)
+//		return first;
+//
+//	return NULL;
+
+//	/* Best fit */
+//	void *best = free_listp;
+//	void *iter;
+//	for (iter = free_listp; GET_ALLOC(HDRP(iter)) == 0; iter = GET_NEXT(iter)) {
+//			if (GET_SIZE(HDRP(iter)) >= size)
+//				if (GET_SIZE(HDRP(iter)) < GET_SIZE(HDRP(best)))
+//					best = iter;
+//		}
+//
+//	if (best != free_listp)
+//		return best;
+//	return NULL;
 }
 
 static void join_prev_next(void* bp) {
