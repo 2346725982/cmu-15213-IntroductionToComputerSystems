@@ -104,13 +104,12 @@ static void *find_fit(size_t size);
 static void *search_list(void* head, size_t size);
 static void place(void* bp, size_t size);
 static void add_to_list(void* bp, size_t size);
-static void remove_from_list(void* bp, size_t size);
+static void remove_from_list(void* bp);
 
 /*
  * Initialize: return -1 on error, 0 on success.
  */
 int mm_init(void) {
-	//printf("init: begin\n");
 	heap_listp = NULL;
 	pro_epi_louge = NULL;
 
@@ -118,13 +117,10 @@ int mm_init(void) {
 	if ((heap_listp = mem_sbrk(LIST_NUMBER * MIN_BLK)) == NULL)
 		return -1;
 
-	//printf("init: after heap_listp\n");
 	PUT(heap_listp + LIST0_HEAD, PACK(0, 0));
 	GET_PREV(heap_listp + LIST0_HEAD + WSIZE) = NULL;
 	GET_NEXT(heap_listp + LIST0_HEAD + WSIZE) = NULL;
 	PUT(heap_listp + LIST0_HEAD + WSIZE + 2 * DSIZE, PACK(0, 0));
-	//printf("init: list0 p = %p, size = %d\n", heap_listp + LIST0_HEAD,
-	//		GET_SIZE(HDRP(heap_listp + LIST0_HEAD + WSIZE)));
 
 	PUT(heap_listp + LIST1_HEAD, PACK(0, 0));
 	GET_PREV(heap_listp + LIST1_HEAD + WSIZE) = NULL;
@@ -145,28 +141,15 @@ int mm_init(void) {
 	if ((pro_epi_louge = mem_sbrk(4 * WSIZE)) == NULL)
 		return -1;
 
-	//printf("init: after pro_epi_louge\n");
-
 	PUT(pro_epi_louge, 0); /* Alignment padding */
 	PUT(pro_epi_louge + (1 * WSIZE), PACK(DSIZE, 1)); /* Prologue header */
 	PUT(pro_epi_louge + (2 * WSIZE), PACK(DSIZE, 1)); /* Prologue footer */
 	PUT(pro_epi_louge + (3 * WSIZE), PACK(0, 1)); /*Epiologue */
 
-	//printf("init: sep_listp pointer = %p\n", pro_epi_louge);
-	//printf("init: heap_listp pointer = %p\n", heap_listp);
-	//printf("init: list0 p = %p, size = %d\n", heap_listp + LIST0_HEAD,
-	//		GET_SIZE(HDRP(heap_listp + LIST0_HEAD + WSIZE)));
-	//printf("mm_init: before extend_heap.\n");
 	/* Extend the empty heap with a free block of CHUNKSIZE bytes */
 	if (extend_heap(CHUNKSIZE / WSIZE) == NULL) {
-		//printf("mm_init: extend_heap fails.\n");
 		return -1;
 	}
-	//printf("init: after extend_heap\n");
-	//printf("init: list0 p = %p, size = %d\n", heap_listp + LIST0_HEAD,
-	//		GET_SIZE(HDRP(heap_listp + LIST0_HEAD + WSIZE)));
-
-	//printf("init: finish init.\n");
 	return 0;
 }
 
@@ -174,8 +157,6 @@ int mm_init(void) {
  * malloc
  */
 void *malloc(size_t size) {
-	//printf("malloc: called, size = %zd\n", size);
-
 	size_t asize; /* Adjusted block size */
 	size_t extendsize;/* Amount to extend heap if no fit */
 	char *bp;
@@ -187,25 +168,19 @@ void *malloc(size_t size) {
 	/* Adjust block size to include overhead and alignment reqs. */
 	asize = MAX(ALIGN(size) + DSIZE, MIN_BLK);
 
-	//printf("malloc: before find_fit\n");
 	/* Search the free list for a fit */
 	if ((bp = find_fit(asize)) != NULL) {
-		//printf("malloc: find a fit, bp = %p\n", bp);
 		place(bp, asize);
 		return bp;
 	}
 
-	//printf("malloc: before extend_heap\n");
 	/* No fit found. Get more memory and place the block */
 	extendsize = MAX(asize, CHUNKSIZE);
 	if ((bp = extend_heap(extendsize / WSIZE)) == NULL) {
 		return NULL;
 	}
-	//printf("malloc: not found, extend heap, bp = %p\n", bp);
-	//printf("malloc: before place\n");
 	place(bp, asize);
 
-	//printf("malloc: finish");
 	return bp;
 
 }
@@ -330,8 +305,6 @@ void mm_checkheap(int lineno) {
  * (2) when mm_malloc is unable to find a suitable fit
  */
 static void *extend_heap(size_t words) {
-	//printf("extend_heap: words = %zd\n", words);
-	//printf("extend_heap: heap size = %zd\n", mem_heapsize());
 	char *bp;
 	size_t size;
 
@@ -339,16 +312,8 @@ static void *extend_heap(size_t words) {
 	size = (words % 2) ? (words + 1) * WSIZE : words * WSIZE;
 	if (size < MIN_BLK)
 		size = MIN_BLK;
-	//printf("extend_heap: before mem_sbrk, list3 alloc = %d\n",
-	//		GET_ALLOC(HDRP(heap_listp + LIST3_HEAD + WSIZE)));
 	if ((long) (bp = mem_sbrk(size)) == -1)
 		return NULL;
-	//printf("extend_heap: after mem_sbrk, list3 alloc = %d\n",
-	//		GET_ALLOC(HDRP(heap_listp + LIST3_HEAD + WSIZE)));
-
-	//printf("extend_heap: before PUT.\n");
-	//printf("extend_heap: list0 p = %p, size = %d\n", heap_listp + LIST0_HEAD,
-	//		GET_SIZE(HDRP(heap_listp + LIST0_HEAD + WSIZE)));
 
 	/* Initialize free block header/footer and the epilogue header */
 	PUT(HDRP(bp), PACK(size, 0)); /* Free block header */
@@ -356,23 +321,10 @@ static void *extend_heap(size_t words) {
 	GET_NEXT(bp) = NULL;
 	PUT(FTRP(bp), PACK(size, 0)); /* Free block footer */
 	PUT(HDRP(NEXT_BLKP(bp)), PACK(0, 1)); /* New epilogue header */
-	//printf("extend_heap: after PUT, list3 alloc = %d\n",
-	//		GET_ALLOC(HDRP(heap_listp + LIST3_HEAD + WSIZE)));
-
-	//printf("extend_heap: before add_to_list bp = %p, size = %zd.\n", bp, size);
-	//printf("extend_heap: list0 p = %p, size = %d\n", heap_listp + LIST0_HEAD,
-	//		GET_SIZE(HDRP(heap_listp + LIST0_HEAD + WSIZE)));
 	add_to_list(bp, size);
-
-	//printf("extend_heap: before coalesce.\n");
-	//printf("extend_heap: list0 p = %p, size = %d\n", heap_listp + LIST0_HEAD,
-	//		GET_SIZE(HDRP(heap_listp + LIST0_HEAD + WSIZE)));
 
 	/* Coalesce if the previous block was free */
 
-	//printf("extend_heap: after coalesce, list3 alloc = %d\n",
-	//		GET_ALLOC(HDRP(heap_listp + LIST3_HEAD + WSIZE)));
-	//printf("extend_heap: finish");
 	return coalesce(bp);
 }
 
@@ -396,28 +348,16 @@ static void *coalesce(void *bp) {
 	size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
 	size_t size = GET_SIZE(HDRP(bp));
 
-	//printf("  coalesce: bp = %p\n", bp);
-	//printf("coalesce: heapsize = %zd\n", mem_heapsize());
-
 	/* Case 1 */
 	if (prev_alloc && next_alloc) {
-		//printf("coalesce: case 1, prev alloc, next alloc\n");
-		//printf("coalesce: case 1, value: prev = %zd, next = %zd\n", prev_alloc,
-		//		next_alloc);
-		//remove_from_list(bp, size);
-		//add_to_list(bp, size);
 		return bp;
 	}
 	/* Case 2 */
 	else if (prev_alloc && !next_alloc) {
-		//printf("coalesce: case 2, prev alloc, next not alloc\n");
-		//printf("coalesce: case 2, value: prev = %zd, next = %zd\n", prev_alloc,
-		//		next_alloc);
 		size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
 
-		//printf("  coalesce: case 2, remove %p, %p\n", bp, NEXT_BLKP(bp));
-		remove_from_list(bp, GET_SIZE(bp));
-		remove_from_list(NEXT_BLKP(bp), GET_SIZE(HDRP(NEXT_BLKP(bp))));
+		remove_from_list(bp);
+		remove_from_list(NEXT_BLKP(bp));
 
 		PUT(HDRP(bp), PACK(size, 0));
 		PUT(FTRP(bp), PACK(size,0));
@@ -425,34 +365,24 @@ static void *coalesce(void *bp) {
 
 	/* Case 3 */
 	else if (!prev_alloc && next_alloc) {
-		//printf("coalesce: case 3, prev not alloc, next alloc\n");
-		//printf("coalesce: case 3, value: prev = %zd, next = %zd\n", prev_alloc,
-		//		next_alloc);
 		size += GET_SIZE(HDRP(PREV_BLKP(bp)));
-		//printf("  coalesce: case 3, remove %p, %p\n", PREV_BLKP(bp), bp);
-		remove_from_list(bp, GET_SIZE(bp));
-		remove_from_list(PREV_BLKP(bp), GET_SIZE(HDRP(PREV_BLKP(bp))));
+		remove_from_list(bp);
+		remove_from_list(PREV_BLKP(bp));
 		PUT(FTRP(bp), PACK(size, 0));
 		PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
 		bp = PREV_BLKP(bp);
 	}
 	/* Case 4 */
 	else {
-		//printf("coalesce: case 4, prev not alloc, next not alloc\n");
-		//printf("coalesce: case 4, value: prev = %zd, next = %zd\n", prev_alloc,
-		//		next_alloc);
 		size += GET_SIZE(HDRP(PREV_BLKP(bp))) + GET_SIZE(FTRP(NEXT_BLKP(bp)));
-		//printf("  coalesce: case 4, remove %p, %p, %p\n", PREV_BLKP(bp), bp,
-		//		NEXT_BLKP(bp));
-		remove_from_list(bp, GET_SIZE(bp));
-		remove_from_list(NEXT_BLKP(bp), GET_SIZE(HDRP(NEXT_BLKP(bp))));
-		remove_from_list(PREV_BLKP(bp), GET_SIZE(HDRP(PREV_BLKP(bp))));
+		remove_from_list(bp);
+		remove_from_list(NEXT_BLKP(bp));
+		remove_from_list(PREV_BLKP(bp));
 		bp = PREV_BLKP(bp);
 		PUT(HDRP(bp), PACK(size, 0));
 		PUT(FTRP(bp), PACK(size, 0));
 	}
 
-	//printf("  coalesce: add %p\n", bp);
 	add_to_list(bp, size);
 	return bp;
 }
@@ -462,15 +392,10 @@ static void *coalesce(void *bp) {
  *
  */
 static void place(void* bp, size_t size) {
-	//printf("  place: bp = %p, size = %zd\n", bp, size);
-	//exit(0);
-
 	size_t newsize = size;
 	size_t oldsize = GET_SIZE(HDRP(bp));
 
-	//printf("place: before remove\n");
-	//printf("  place: remove_from_list. bp = %p, size = %zd\n", bp, oldsize);
-	remove_from_list(bp, oldsize);
+	remove_from_list(bp);
 
 	if ((oldsize - newsize) >= MIN_BLK) {
 
@@ -482,8 +407,6 @@ static void place(void* bp, size_t size) {
 		PUT(HDRP(bp), PACK(oldsize - newsize, 0));
 		PUT(FTRP(bp), PACK(oldsize - newsize, 0));
 
-		//printf("  place: add_to_list. bp = %p, size = %zd\n", bp,
-		//		oldsize - newsize);
 		add_to_list(bp, oldsize - newsize);
 
 	} else {
@@ -502,17 +425,12 @@ static void place(void* bp, size_t size) {
  * 3. First fit in sorted address.
  */
 static void *find_fit(size_t size) {
-	//printf("find_fit: begin, size = %zd\n", size);
-
 	void *bp = NULL;
 
 	if (size <= LIST0_SIZE) {
-		//printf("find_fit: before search_list\n");
 		bp = search_list(heap_listp + LIST0_HEAD, size);
-		//printf("find_fit: after search_list\n");
 	}
 	if (bp != NULL) {
-		//printf("find_fit: found, in interval(size) = %08d\n", LIST0_SIZE);
 		return bp;
 	}
 
@@ -520,7 +438,6 @@ static void *find_fit(size_t size) {
 		bp = search_list(heap_listp + LIST1_HEAD, size);
 	}
 	if (bp != NULL) {
-		//printf("find_fit: found, in interval(size) = %08d\n", LIST1_SIZE);
 		return bp;
 	}
 
@@ -528,7 +445,6 @@ static void *find_fit(size_t size) {
 		bp = search_list(heap_listp + LIST2_HEAD, size);
 	}
 	if (bp != NULL) {
-		//printf("find_fit: found, in interval(size) = %08d\n", LIST2_SIZE);
 		return bp;
 	}
 
@@ -536,36 +452,25 @@ static void *find_fit(size_t size) {
 		bp = search_list(heap_listp + LIST3_HEAD, size);
 	}
 	if (bp != NULL) {
-		//printf("find_fit: found, in interval(size) = %08d\n", LIST3_SIZE);
 		return bp;
 	}
 
-	//printf("find_fit: finished, not found\n");
 	return bp;
 }
 
 static void *search_list(void* head, size_t size) {
-	//printf("search_list: begin, head = %p, size = %zd\n", head, size);
 	void *bp;
 
-	//printf("search_list: head alloc = %d\n", GET_ALLOC(HDRP(head + WSIZE)));
-	//printf("search_list: head = %p\n", head + WSIZE);
 	for (bp = head + WSIZE; bp != NULL; bp = GET_NEXT(bp)) {
 		if (GET_SIZE(HDRP(bp)) >= size) {
-			//printf(
-			//		"  search_list: found, return bp = %p, size = %zd, bp->size = %d\n",
-			//		bp, size, GET_SIZE(HDRP(bp)));
 			return bp;
 		}
 	}
-	//printf("search_list: not found, reach the end of the list\n");
 	return NULL;
 
 }
 
 static void add_to_list(void* bp, size_t size) {
-	//printf("add_to_list: bp = %p, size = %zd\n", bp, size);
-
 	void* head;
 
 	if (size <= LIST0_SIZE) {
@@ -577,48 +482,17 @@ static void add_to_list(void* bp, size_t size) {
 	} else {
 		head = heap_listp + LIST3_HEAD;
 	}
-	//printf("add_to_list: after getting head of list, before GET & PUT.\n");
-	//printf("add_to_list: after head found, list3 alloc = %d\n",
-	//		GET_ALLOC(HDRP(heap_listp + LIST3_HEAD + WSIZE)));
-
 	head = head + WSIZE;
-
-	//printf("add_to_list: bp = %p, size = %zd\n", bp, size);
-	//printf("add_to_list: heap_listp = %p, head = %p\n", heap_listp, head);
-
-	//printf("add_to_list: head = %p, bp = %p\n", head, bp);
-	//printf(
-	//		"add_to_list: head->prev = %p, head->next = %p, bp->prev = %p, bp->next = %p\n",
-	//		GET_PREV(head), GET_NEXT(head), GET_PREV(bp), GET_NEXT(bp));
 	GET_PREV(bp) = head;
-	//printf("GET_PREV(bp) = head;\n");
-
 	GET_NEXT(bp) = GET_NEXT(head);
-	//printf("GET_NEXT(bp) = GET_NEXT(head);\n");
-
-	//printf("GET_NEXT(head) = %p\n", GET_NEXT(head));
 	if (GET_NEXT(head) != NULL)
 		GET_PREV(GET_NEXT(head)) = bp;
-	//printf("GET_PREV(GET_NEXT(head)) = bp;\n");
-
 	GET_NEXT(head) = bp;
-	//printf("GET_NEXT(head) = bp;\n");
-
-	//exit(0);
-
-	//printf("add_to_list: finish\n");
 }
 
-static void remove_from_list(void* bp, size_t size) {
-	size++;
-	//printf("remove_from_list: bp = %p, bp->prev = %p, bp->next = %p\n", bp, GET_PREV(bp),
-	//GET_NEXT(bp)
-	//);
+static void remove_from_list(void* bp) {
 	GET_NEXT(GET_PREV(bp)) = GET_NEXT(bp);
 
 	if (GET_NEXT(bp) != NULL)
 		GET_PREV(GET_NEXT(bp)) = GET_PREV(bp);
-
-	//exit(0);
-
 }
