@@ -85,17 +85,35 @@ static void *heap_listp;
 static void *pro_epi_louge;
 
 /* Segregated lists define */
-#define LIST_NUMBER 4
+#define LIST_NUMBER 13
 
 #define LIST0_HEAD 0 * MIN_BLK
 #define LIST1_HEAD 1 * MIN_BLK
 #define LIST2_HEAD 2 * MIN_BLK
 #define LIST3_HEAD 3 * MIN_BLK
+#define LIST4_HEAD 4 * MIN_BLK
+#define LIST5_HEAD 5 * MIN_BLK
+#define LIST6_HEAD 6 * MIN_BLK
+#define LIST7_HEAD 7 * MIN_BLK
+#define LIST8_HEAD 8 * MIN_BLK
+#define LIST9_HEAD 9 * MIN_BLK
+#define LIST10_HEAD 10 * MIN_BLK
+#define LIST11_HEAD 11 * MIN_BLK
+#define LIST12_HEAD 12 * MIN_BLK
 
 #define LIST0_SIZE 24
-#define LIST1_SIZE 960
-#define LIST2_SIZE 3840
-#define LIST3_SIZE 30720 // To infinity
+#define LIST1_SIZE 48
+#define LIST2_SIZE 72
+#define LIST3_SIZE 96
+#define LIST4_SIZE 120
+#define LIST5_SIZE 480
+#define LIST6_SIZE 960
+#define LIST7_SIZE 1920
+#define LIST8_SIZE 3840
+#define LIST9_SIZE 7680
+#define LIST10_SIZE 15360
+#define LIST11_SIZE 30720
+#define LIST12_SIZE 61440 // To infinity
 
 /* Function definition */
 static void *coalesce(void *bp);
@@ -136,6 +154,51 @@ int mm_init(void) {
 	GET_PREV(heap_listp + LIST3_HEAD + WSIZE) = NULL;
 	GET_NEXT(heap_listp + LIST3_HEAD + WSIZE) = NULL;
 	PUT(heap_listp + LIST3_HEAD + WSIZE + 2 * DSIZE, PACK(0, 0));
+
+	PUT(heap_listp + LIST4_HEAD, PACK(0, 0));
+	GET_PREV(heap_listp + LIST4_HEAD + WSIZE) = NULL;
+	GET_NEXT(heap_listp + LIST4_HEAD + WSIZE) = NULL;
+	PUT(heap_listp + LIST4_HEAD + WSIZE + 2 * DSIZE, PACK(0, 0));
+
+	PUT(heap_listp + LIST5_HEAD, PACK(0, 0));
+	GET_PREV(heap_listp + LIST5_HEAD + WSIZE) = NULL;
+	GET_NEXT(heap_listp + LIST5_HEAD + WSIZE) = NULL;
+	PUT(heap_listp + LIST5_HEAD + WSIZE + 2 * DSIZE, PACK(0, 0));
+
+	PUT(heap_listp + LIST6_HEAD, PACK(0, 0));
+	GET_PREV(heap_listp + LIST6_HEAD + WSIZE) = NULL;
+	GET_NEXT(heap_listp + LIST6_HEAD + WSIZE) = NULL;
+	PUT(heap_listp + LIST6_HEAD + WSIZE + 2 * DSIZE, PACK(0, 0));
+
+	PUT(heap_listp + LIST7_HEAD, PACK(0, 0));
+	GET_PREV(heap_listp + LIST7_HEAD + WSIZE) = NULL;
+	GET_NEXT(heap_listp + LIST7_HEAD + WSIZE) = NULL;
+	PUT(heap_listp + LIST7_HEAD + WSIZE + 2 * DSIZE, PACK(0, 0));
+
+	PUT(heap_listp + LIST8_HEAD, PACK(0, 0));
+	GET_PREV(heap_listp + LIST8_HEAD + WSIZE) = NULL;
+	GET_NEXT(heap_listp + LIST8_HEAD + WSIZE) = NULL;
+	PUT(heap_listp + LIST8_HEAD + WSIZE + 2 * DSIZE, PACK(0, 0));
+
+	PUT(heap_listp + LIST9_HEAD, PACK(0, 0));
+	GET_PREV(heap_listp + LIST9_HEAD + WSIZE) = NULL;
+	GET_NEXT(heap_listp + LIST9_HEAD + WSIZE) = NULL;
+	PUT(heap_listp + LIST9_HEAD + WSIZE + 2 * DSIZE, PACK(0, 0));
+
+	PUT(heap_listp + LIST10_HEAD, PACK(0, 0));
+	GET_PREV(heap_listp + LIST10_HEAD + WSIZE) = NULL;
+	GET_NEXT(heap_listp + LIST10_HEAD + WSIZE) = NULL;
+	PUT(heap_listp + LIST10_HEAD + WSIZE + 2 * DSIZE, PACK(0, 0));
+
+	PUT(heap_listp + LIST11_HEAD, PACK(0, 0));
+	GET_PREV(heap_listp + LIST11_HEAD + WSIZE) = NULL;
+	GET_NEXT(heap_listp + LIST11_HEAD + WSIZE) = NULL;
+	PUT(heap_listp + LIST11_HEAD + WSIZE + 2 * DSIZE, PACK(0, 0));
+
+	PUT(heap_listp + LIST12_HEAD, PACK(0, 0));
+	GET_PREV(heap_listp + LIST12_HEAD + WSIZE) = NULL;
+	GET_NEXT(heap_listp + LIST12_HEAD + WSIZE) = NULL;
+	PUT(heap_listp + LIST12_HEAD + WSIZE + 2 * DSIZE, PACK(0, 0));
 
 	/* Prologue and Epilogue */
 	if ((pro_epi_louge = mem_sbrk(4 * WSIZE)) == NULL)
@@ -341,7 +404,16 @@ static void *coalesce(void *bp) {
 	if (PREV_BLKP(bp) == heap_listp + LIST0_HEAD + WSIZE
 			|| PREV_BLKP(bp) == heap_listp + LIST1_HEAD + WSIZE
 			|| PREV_BLKP(bp) == heap_listp + LIST2_HEAD + WSIZE
-			|| PREV_BLKP(bp) == heap_listp + LIST3_HEAD + WSIZE) {
+			|| PREV_BLKP(bp) == heap_listp + LIST3_HEAD + WSIZE
+			|| PREV_BLKP(bp) == heap_listp + LIST4_HEAD + WSIZE
+			|| PREV_BLKP(bp) == heap_listp + LIST5_HEAD + WSIZE
+			|| PREV_BLKP(bp) == heap_listp + LIST6_HEAD + WSIZE
+			|| PREV_BLKP(bp) == heap_listp + LIST7_HEAD + WSIZE
+			|| PREV_BLKP(bp) == heap_listp + LIST8_HEAD + WSIZE
+			|| PREV_BLKP(bp) == heap_listp + LIST9_HEAD + WSIZE
+			|| PREV_BLKP(bp) == heap_listp + LIST10_HEAD + WSIZE
+			|| PREV_BLKP(bp) == heap_listp + LIST11_HEAD + WSIZE
+			|| PREV_BLKP(bp) == heap_listp + LIST12_HEAD + WSIZE) {
 		prev_alloc = 1;
 	}
 
@@ -455,6 +527,69 @@ static void *find_fit(size_t size) {
 		return bp;
 	}
 
+	if (size <= LIST4_SIZE) {
+		bp = search_list(heap_listp + LIST4_HEAD, size);
+	}
+	if (bp != NULL) {
+		return bp;
+	}
+
+	if (size <= LIST5_SIZE) {
+		bp = search_list(heap_listp + LIST5_HEAD, size);
+	}
+	if (bp != NULL) {
+		return bp;
+	}
+
+	if (size <= LIST6_SIZE) {
+		bp = search_list(heap_listp + LIST6_HEAD, size);
+	}
+	if (bp != NULL) {
+		return bp;
+	}
+
+	if (size <= LIST7_SIZE) {
+		bp = search_list(heap_listp + LIST7_HEAD, size);
+	}
+	if (bp != NULL) {
+		return bp;
+	}
+
+	if (size <= LIST8_SIZE) {
+		bp = search_list(heap_listp + LIST8_HEAD, size);
+	}
+	if (bp != NULL) {
+		return bp;
+	}
+
+	if (size <= LIST9_SIZE) {
+		bp = search_list(heap_listp + LIST9_HEAD, size);
+	}
+	if (bp != NULL) {
+		return bp;
+	}
+
+	if (size <= LIST10_SIZE) {
+		bp = search_list(heap_listp + LIST10_HEAD, size);
+	}
+	if (bp != NULL) {
+		return bp;
+	}
+
+	if (size <= LIST11_SIZE) {
+		bp = search_list(heap_listp + LIST11_HEAD, size);
+	}
+	if (bp != NULL) {
+		return bp;
+	}
+
+	if (size <= LIST12_SIZE) {
+		bp = search_list(heap_listp + LIST12_HEAD, size);
+	}
+	if (bp != NULL) {
+		return bp;
+	}
+
 	return bp;
 }
 
@@ -479,8 +614,26 @@ static void add_to_list(void* bp, size_t size) {
 		head = heap_listp + LIST1_HEAD;
 	} else if (size <= LIST2_SIZE) {
 		head = heap_listp + LIST2_HEAD;
-	} else {
+	} else if (size <= LIST3_SIZE) {
 		head = heap_listp + LIST3_HEAD;
+	} else if (size <= LIST4_SIZE) {
+		head = heap_listp + LIST4_HEAD;
+	} else if (size <= LIST5_SIZE) {
+		head = heap_listp + LIST5_HEAD;
+	} else if (size <= LIST6_SIZE) {
+		head = heap_listp + LIST6_HEAD;
+	} else if (size <= LIST7_SIZE) {
+		head = heap_listp + LIST7_HEAD;
+	} else if (size <= LIST8_SIZE) {
+		head = heap_listp + LIST8_HEAD;
+	} else if (size <= LIST9_SIZE) {
+		head = heap_listp + LIST9_HEAD;
+	} else if (size <= LIST10_SIZE) {
+		head = heap_listp + LIST10_HEAD;
+	} else if (size <= LIST11_SIZE) {
+		head = heap_listp + LIST11_HEAD;
+	}else{
+		head = heap_listp + LIST12_HEAD;
 	}
 	head = head + WSIZE;
 	GET_PREV(bp) = head;
